@@ -1,10 +1,10 @@
 phases:
-- phase: Linux
+- phase: macOS
   dependsOn: GetReleaseVersion
   variables:
     ReleaseVersion: $[ dependencies.GetReleaseVersion.outputs['Version.ReleaseVersion'] ]
   queue:
-    name: Hosted Linux Preview
+    name: Hosted macOS Preview
     timeoutInMinutes: 180
 
   steps:
@@ -14,24 +14,21 @@ phases:
     displayName: Install Node.js 8.9.3
 
   - script: |
-      apt-get update
-      apt-get install -y --no-install-recommends build-essential xvfb clang-3.5 fakeroot git libsecret-1-dev rpm libx11-dev libxkbfile-dev xz-utils xorriso zsync libxss1 libgconf2-4 libgtk-3-0
-    displayName: Install apt dependencies
-
-  - script: |
-      script/build --create-debian-package --create-rpm-package --compress-artifacts
+      script/build --code-sign --compress-artifacts
+    displayName: Build Atom
     env:
       ATOM_RELEASE_VERSION: $(ReleaseVersion)
-    displayName: Build Atom
+      ATOM_MAC_CODE_SIGNING_CERT_DOWNLOAD_URL: $(ATOM_MAC_CODE_SIGNING_CERT_DOWNLOAD_URL)
+      ATOM_MAC_CODE_SIGNING_CERT_PASSWORD: $(ATOM_MAC_CODE_SIGNING_CERT_PASSWORD)
+      ATOM_MAC_CODE_SIGNING_KEYCHAIN: $(ATOM_MAC_CODE_SIGNING_KEYCHAIN)
+      ATOM_MAC_CODE_SIGNING_KEYCHAIN_PASSWORD: $(ATOM_MAC_CODE_SIGNING_KEYCHAIN_PASSWORD)
 
   - script: script/lint
     displayName: Run linter
 
   - script: |
-      /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16
-      export DISPLAY=':99.0'
-      Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-      script/test
+      osascript -e 'tell application "System Events" to keystroke "x"' # clear screen saver
+      caffeinate -s script/test # Run with caffeinate to prevent screen saver
     env:
       CI: true
       CI_PROVIDER: VSTS
@@ -46,13 +43,13 @@ phases:
   - task: CopyFiles@2
     inputs:
       sourceFolder: $(Build.SourcesDirectory)/out
-      contents: '?(*.deb|*.rpm|*.tar.gz)'
+      contents: '*.zip'
       targetFolder: $(Build.ArtifactStagingDirectory)
     displayName: Stage Artifacts
 
   - task: PublishBuildArtifacts@1
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)
-      ArtifactName: Binaries
+      ArtifactName: macOS
       ArtifactType: Container
     displayName: Upload Artifacts
