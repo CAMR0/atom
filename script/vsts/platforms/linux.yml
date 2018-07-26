@@ -27,32 +27,33 @@ phases:
   - script: script/lint
     displayName: Run linter
 
-  - script: |
-      /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16
-      export DISPLAY=':99.0'
-      Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-      script/test
-    env:
-      CI: true
-      CI_PROVIDER: VSTS
-    displayName: Run tests
-
-  # This step is necessary in the short term due to a bug in the *NIX
-  # implementation of the CopyFiles task which scans the entire file
-  # system structure just to resolve the glob pattern.
-  - script: rm -rf $(Build.SourcesDirectory)/out/*/
-    displayName: Delete Intermediate Output
-
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: $(Build.SourcesDirectory)/out
-      contents: '?(*.deb|*.rpm|*.tar.gz)'
-      targetFolder: $(Build.ArtifactStagingDirectory)
-    displayName: Stage Artifacts
+  # - script: |
+  #     /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16
+  #     export DISPLAY=':99.0'
+  #     Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+  #     script/test
+  #   env:
+  #     CI: true
+  #     CI_PROVIDER: VSTS
+  #   displayName: Run tests
 
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)
-      ArtifactName: Linux
+      PathtoPublish: $(Build.SourcesDirectory)/out/atom.x86_64.rpm
+      ArtifactName: atom.x86_64.rpm
       ArtifactType: Container
-    displayName: Upload Artifacts
+    displayName: Upload atom.x84_64.rpm
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: $(Build.SourcesDirectory)/out/atom-amd64.deb
+      ArtifactName: atom-amd64.deb
+      ArtifactType: Container
+    displayName: Upload atom-amd64.deb
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: $(Build.SourcesDirectory)/out/atom-amd64.tar.gz
+      ArtifactName: atom-amd64.tar.gz
+      ArtifactType: Container
+    displayName: Upload atom-amd64.tar.gz
