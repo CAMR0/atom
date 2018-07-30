@@ -11,6 +11,7 @@ branches:
   - master
   - /^[0-9.]+-releases$/
   - /^electron-[0-9.]+$/
+  - dw-fix-appveyor-x64-windows
 
 platform:
   - x64
